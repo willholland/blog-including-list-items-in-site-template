@@ -1,0 +1,54 @@
+<h2>The Problem</h2>
+<p>Have you ever heard this from a client or colleague?</p><br />
+<blockquote>
+    <p>&quot;I have a list of data on this one site that I need to move to another site.&quot;</p><br />
+</blockquote>
+<p><img src="images/sad-mario.png" alt="sad-mario.png"></p><br />
+<p>Just a simple list of data that they want moved from <strong>Site A</strong> to <strong>Site B</strong>. For such a
+    simple request, the solution has, historically, always been anything but simple.</p><br />
+<p>Until now! Thanks to <a href="https://pnp.github.io/powershell/">PnP PowerShell</a>, we can handle this request in 5
+    lines of PowerShell!</p><br />
+<h2>The Setup</h2>
+<p>Aside from the obvious set of SharePoint sites and a list, the only real prerequisite is to make sure you have PnP
+    PowerShell installed.</p><br />
+<p>This blog is running the newer <code>PnP.PowerShell</code> module, which I highly recommend you jump over to.</p>
+<br />
+<p>You can use the link from the introduction for the full instructions, or you can open up PowerShell and...</p><br />
+<pre><code class="language-powershell">Install-Module -Name PnP.PowerShell
+</code></pre>
+<h2>The Solution</h2>
+<p>In a previous blog post, we walked through the process of creating custom view formats to create a pretty nifty
+    dashboard full of cards about members of the <em>Fellowship of the Ring</em>.</p><br />
+<p>For the sake of this example, let's pretend I made a mistake (which <em>never</em> happens IRL), and I put that list
+    on the wrong site.</p><br />
+<p>The solution is pretty straightforward. We're basically going to create a PnP site template, add our list data to it,
+    and then apply that template to our target site.</p><br />
+<h4>Step 1 - Connect to the Source Site</h4>
+<p>The first thing we'll do is connect to the source site.</p><br />
+<pre><code class="language-powershell">Connect-PnPOnline -Url https://constoso.sharepoint.com/sites/star-wars -Interactive
+</code></pre>
+<h4>Step 2 - Create the Template</h4>
+<p>We actaully have two lists we need to copy. <em>Fellowship Members</em> is the list we care about but, since it
+    contains a lookup column, we need to grab the <em>Middle Earth Locales</em> lookup list as well.</p><br />
+<pre><code class="language-powershell">Get-PnPSiteTemplate -Out Lists.xml -ListsToExtract &quot;Middle Earth Locales&quot;, &quot;Fellowship Members&quot; -Handlers Lists
+</code></pre>
+<h4>Step 3 - Get the List Data</h4>
+<p>We'll use the <code>Add-PnPDataRowToSiteTemplate</code> cmdlet to populate our list instances with actual list item.
+    Because we have two lists, we need to run the cmdlet twice. (So, technically, I guess we're doing 6 lines of
+    PowerShell. Shh!)</p><br />
+<pre><code class="language-powershell">Add-PnPDataRowsToSiteTemplate -Path Lists.xml -List &quot;Middle Earth Locales&quot;
+
+Add-PnPDataRowsToSiteTemplate -Path Lists.xml -List &quot;Fellowship Members&quot;
+</code></pre>
+<h4>Step 4 - Connect to Target Site</h4>
+<p>Now we connect to the target site...</p><br />
+<pre><code class="language-powershell">Connect-PnPOnline -Url https://constoso.sharepoint.com/sites/lotr -Interactive
+</code></pre>
+<h4>Step 5 - Apply the Template</h4>
+<p>...and we apply our template using the <code>Invoke-PnPSiteTemplate</code> cmdlet.</p><br />
+<pre><code class="language-powershell">Invoke-PnPSiteTemplate -Path Lists.xml
+</code></pre>
+<h2>Game Over</h2>
+<p>Now you've got your list(s), complete with data, copied over to another site. All that's left to do is get rid of the
+    old one, if necessary.</p><br />
+<p><img src="images/you-win.jpg" alt="you-win.jpg"></p><br />
